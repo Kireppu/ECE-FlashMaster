@@ -1,0 +1,33 @@
+package com.example.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.example.R
+
+/**
+ * Native Cambria Math typography for mathematical equations, fractions,
+ * derivations, subscripts, and engineering symbols.
+ */
+val CambriaMathFontFamily = FontFamily(
+    Font(R.font.cambria_math, FontWeight.Normal),
+    Font(R.font.cambria_math, FontWeight.Medium),
+    Font(R.font.cambria_math, FontWeight.Bold)
+)
+
+// Set of Material typography styles to start with
+val Typography =
+  Typography(
+    bodyLarge =
+      TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp,
+      )
+  )
+

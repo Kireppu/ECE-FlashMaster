@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="katex.min.css">
+    <style>
+        @font-face {
+            font-family: 'Cambria Math';
+            src: local('Cambria Math'), local('Latin Modern Math');
+        }
+
+        *, *:before, *:after {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            background: transparent !important;
+            color: #0F172A;
+            font-family: 'Cambria Math', 'Latin Modern Math', 'STIX Two Math', 'KaTeX_Math', 'Cambria', serif;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow: visible !important;
+            word-wrap: break-word;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .dark-theme {
+            color: #E2E8F0 !important;
+        }
+
+        .math-container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 4px 2px 8px 2px;
+            background: transparent;
+            box-sizing: border-box;
+            display: block;
+        }
+
+        /* Container for pure formula block display */
+        .force-block-container {
+            display: block !important;
+            text-align: center !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+            padding: 4px 0 6px 0 !important;
+        }
+
+        /* 2D Equation styling */
+        .katex {
+            font-family: 'Cambria Math', 'Latin Modern Math', 'STIX Two Math', 'KaTeX_Math', 'Cambria', serif !important;
+            font-size: 1.15em !important;
+            letter-spacing: 0.02em;
+        }
+
+        .dark-theme .katex {
+            color: #F8FAFC !important;
+        }
+
+        /* Display equations: ALWAYS centered horizontally with zero clipping */
+        .katex-display {
+            display: block !important;
+            text-align: center !important;
+            width: 100% !important;
+            margin: 8px auto !important;
+            padding: 4px 0 !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box !important;
+        }
+
+        .katex-display > .katex {
+            display: inline-block !important;
+            text-align: center !important;
+            margin: 0 auto !important;
+            white-space: nowrap !important;
+        }
+
+        .katex-display > .katex > .katex-html {
+            display: inline-block !important;
+            text-align: center !important;
+            margin: 0 auto !important;
+        }
+
+        /* Pure block container equations */
+        .force-block-container .katex-display {
+            display: block !important;
+            text-align: center !important;
+            margin: 2px auto !important;
+            padding: 0 !important;
+        }
+
+        .force-block-container .katex-display > .katex {
+            display: inline-block !important;
+            text-align: center !important;
+            margin: 0 auto !important;
+        }
+
+        /* Fractions line enhancement */
+        .katex .frac-line {
+            border-bottom-width: 1.35px !important;
+        }
+
+        /* Square root radical padding */
+        .katex .sqrt > .root {
+            margin-left: 0.28em;
+            margin-right: -0.56em;
+        }
+
+        /* Inline text with crisp typography */
+        .text-paragraph {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.0em;
+            line-height: 1.6;
+            margin: 0;
+            padding: 2px 0;
+            word-wrap: break-word;
+            display: inline;
+        }
+
+        .dark-theme .text-paragraph {
+            color: #CBD5E1;
+        }
+    </style>
+    <script src="katex.min.js"></script>
+</head>
+<body>
+    <div id="content" class="math-container"></div>
+
+    <script>
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function sanitizeTex(tex) {
+            if (!tex) return '';
+            return tex
+                .replace(/·/g, ' \\cdot ')
+                .replace(/×/g, ' \\times ')
+                .replace(/∠/g, ' \\angle ')
+                .replace(/°/g, '^\\circ ')
+                .replace(/Ω/g, ' \\ \\Omega ')
+                .replace(/₱/g, ' \\text{₱} ');
+        }
+
+        function renderKatexMath(tex, isDisplay) {
+            const clean = sanitizeTex(tex.trim());
+            try {
+                return katex.renderToString(clean, {
+                    displayMode: isDisplay,
+                    throwOnError: false,
+                    output: 'htmlAndMathml'
+                });
+            } catch (e) {
+                return isDisplay 
+                    ? '<div class="katex-display">' + escapeHtml(clean) + '</div>'
+                    : '<span>' + escapeHtml(clean) + '</span>';
+            }
+        }
+
+        // Scale down extra wide equations proportionally by fontSize so DOM dimensions reflow accurately
+        function fitWideEquations() {
+            const container = document.getElementById('content');
+            if (!container) return;
+            const containerWidth = container.clientWidth || document.documentElement.clientWidth || window.innerWidth || 320;
+            if (containerWidth <= 40) return;
+
+            const displays = container.querySelectorAll('.katex-display');
+            displays.forEach(display => {
+                const katexEl = display.querySelector('.katex');
+                if (katexEl) {
+                    katexEl.style.fontSize = '';
+                    const mathWidth = katexEl.scrollWidth || katexEl.offsetWidth;
+                    const availableWidth = containerWidth - 12;
+                    if (mathWidth > availableWidth && availableWidth > 50) {
+                        const ratio = Math.max(0.60, availableWidth / mathWidth);
+                        katexEl.style.fontSize = (ratio * 1.15).toFixed(2) + 'em';
+                    }
+                }
+            });
+        }
+
+        function getActualContentHeight() {
+            fitWideEquations();
+
+            const content = document.getElementById('content');
+            if (!content) return 40;
+
+            const rect = content.getBoundingClientRect();
+            const h1 = content.scrollHeight || 0;
+            const h2 = content.offsetHeight || 0;
+            const h3 = rect ? Math.ceil(rect.height) : 0;
+            const h4 = document.body ? document.body.scrollHeight : 0;
+
+            const maxHeight = Math.max(h1, h2, h3, h4);
+            return Math.ceil(maxHeight);
+        }
+
+        function reportHeight() {
+            requestAnimationFrame(function() {
+                const height = getActualContentHeight();
+                if (window.AndroidInterface && window.AndroidInterface.onHeightChanged) {
+                    window.AndroidInterface.onHeightChanged(height);
+                }
+            });
+        }
+
+        function renderMath(rawContent, isDarkMode, fontSizeSp, forceBlock) {
+            const container = document.getElementById('content');
+            if (isDarkMode) {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+
+            if (fontSizeSp && fontSizeSp > 0) {
+                document.body.style.fontSize = fontSizeSp + 'px';
+            }
+
+            if (!rawContent || rawContent.trim() === '') {
+                container.innerHTML = '';
+                container.className = 'math-container';
+                reportHeight();
+                return 0;
+            }
+
+            let text = rawContent.trim();
+
+            // If forced block or pure LaTeX equation string
+            if (forceBlock || (text.startsWith('\\[') && text.endsWith('\\]')) || (text.startsWith('$$') && text.endsWith('$$'))) {
+                container.className = 'math-container force-block-container';
+                let cleanTex = text
+                    .replace(/^\\\[/, '').replace(/\\\]$/, '')
+                    .replace(/^\$\$/, '').replace(/\$\$$/, '')
+                    .replace(/^\[EQ\]/i, '').replace(/\[\/EQ\]$/i, '')
+                    .trim();
+                container.innerHTML = renderKatexMath(cleanTex, true);
+                fitWideEquations();
+                reportHeight();
+                return getActualContentHeight();
+            }
+
+            container.className = 'math-container';
+
+            // Normalization of delimiters:
+            // 1. Normalize \[...\] to [EQ]...[/EQ]
+            // 2. Normalize $$...$$ to [EQ]...[/EQ]
+            // 3. Normalize \(...\) to [IEQ]...[/IEQ]
+            let normalized = text
+                .replace(/\\\[([\s\S]*?)\\\]/g, '[EQ]$1[/EQ]')
+                .replace(/\$\$([\s\S]*?)\$\$/g, '[EQ]$1[/EQ]')
+                .replace(/\\\(([\s\S]*?)\\\)/g, '[IEQ]$1[/IEQ]');
+
+            // Normalize single dollar signs $...$ (ignore escaped ones)
+            normalized = normalized.replace(/(^|[^\\])\$([^\$\n]+?)\$/g, '$1[IEQ]$2[/IEQ]');
+
+            const hasMath = /\[EQ\][\s\S]*?\[\/EQ\]/i.test(normalized) || /\[IEQ\][\s\S]*?\[\/IEQ\]/i.test(normalized);
+
+            if (hasMath) {
+                // Split tokens by [EQ]...[/EQ] and [IEQ]...[/IEQ]
+                const regex = /(\[EQ\][\s\S]*?\[\/EQ\]|\[IEQ\][\s\S]*?\[\/IEQ\])/gi;
+                const parts = normalized.split(regex);
+                let htmlOut = '';
+
+                for (let i = 0; i < parts.length; i++) {
+                    const part = parts[i];
+                    if (!part) continue;
+
+                    if (/^\[EQ\]([\s\S]*?)\[\/EQ\]$/i.test(part)) {
+                        const tex = part.replace(/^\[EQ\]/i, '').replace(/\[\/EQ\]$/i, '');
+                        htmlOut += renderKatexMath(tex, true);
+                    } else if (/^\[IEQ\]([\s\S]*?)\[\/IEQ\]$/i.test(part)) {
+                        const tex = part.replace(/^\[IEQ\]/i, '').replace(/\[\/IEQ\]$/i, '');
+                        htmlOut += renderKatexMath(tex, false);
+                    } else {
+                        // Plain text section
+                        const safeText = escapeHtml(part)
+                            .replace(/\r\n/g, '<br>')
+                            .replace(/\n\n/g, '<br><br>')
+                            .replace(/\n/g, '<br>');
+                        htmlOut += '<span class="text-paragraph">' + safeText + '</span>';
+                    }
+                }
+                container.innerHTML = htmlOut;
+            } else if (text.startsWith('\\') || text.includes('\\frac') || text.includes('\\sqrt') || text.includes('\\sum') || text.includes('\\int')) {
+                // Unwrapped LaTeX equation
+                container.className = 'math-container force-block-container';
+                container.innerHTML = renderKatexMath(text, true);
+            } else {
+                // Regular formatted text
+                const safeText = escapeHtml(text)
+                    .replace(/\r\n/g, '<br>')
+                    .replace(/\n\n/g, '<br><br>')
+                    .replace(/\n/g, '<br>');
+                container.innerHTML = '<span class="text-paragraph">' + safeText + '</span>';
+            }
+
+            fitWideEquations();
+            reportHeight();
+            return getActualContentHeight();
+        }
+
+        // Automatic ResizeObserver for dynamic layout shifts
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(function() {
+                reportHeight();
+            });
+            window.addEventListener('DOMContentLoaded', function() {
+                ro.observe(document.body);
+                const c = document.getElementById('content');
+                if (c) ro.observe(c);
+            });
+        }
+
+        window.addEventListener('load', function() {
+            reportHeight();
+        });
+
+        window.addEventListener('resize', function() {
+            fitWideEquations();
+            reportHeight();
+        });
+    </script>
+</body>
+</html>

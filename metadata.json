@@ -1,0 +1,6 @@
+{
+  "name": "ECE FlashMaster",
+  "description": "Offline active-recall study companion for ECE engineering and PRC licensure exam students with Unicode Word-style math, calculator techniques, and notes importer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
